@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context=".MainActivity">
+    tools:context=".Signup">
 
     <TextView
         android:id="@+id/textview"
@@ -28,28 +28,38 @@
     <EditText
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="20dp"
+        android:layout_margin="10dp"
+        android:id="@+id/name"
+        android:inputType="textPersonName"
+        android:hint="Enter Name"/>
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
         android:id="@+id/email"
         android:inputType="textEmailAddress"
         android:hint="Enter Email"/>
     <EditText
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="20dp"
+        android:layout_margin="10dp"
         android:id="@+id/password"
         android:hint="Enter Password"/>
-    <Button
+
+    <EditText
+        android:id="@+id/confirm_password"
         android:layout_width="match_parent"
-        android:layout_margin="20dp"
-        android:text="SIGN IN"
-        android:id="@+id/signin"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:hint="Confirm Password" />
+
     <Button
-        android:layout_width="match_parent"
+        android:id="@+id/signup"
+        android:layout_width="331dp"
+        android:layout_height="wrap_content"
         android:layout_marginLeft="20dp"
         android:layout_marginRight="20dp"
-        android:text="SIGN UP"
-        android:id="@+id/signup"
-        android:layout_height="wrap_content" />
+        android:text="SIGN UP" />
+
 
 </LinearLayout>
