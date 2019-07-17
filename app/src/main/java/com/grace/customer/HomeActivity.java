@@ -1,23 +1,22 @@
 package com.grace.customer;
 
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.v4.app.FragmentTransaction;
-import android.view.View;
-import android.support.v4.view.GravityCompat;
-import android.support.v7.app.ActionBarDrawerToggle;
-import android.view.MenuItem;
-import android.support.design.widget.NavigationView;
-import android.support.v4.widget.DrawerLayout;
 
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
+import android.view.View;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.ActionBarDrawerToggle;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.core.view.GravityCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.fragment.app.FragmentTransaction;
+
+import android.view.MenuItem;
+
 import android.view.Menu;
-import android.widget.AutoCompleteTextView;
 import android.widget.Button;
-import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.afollestad.materialdialogs.DialogAction;
@@ -28,9 +27,7 @@ import com.bdhobare.mpesa.interfaces.AuthListener;
 import com.bdhobare.mpesa.interfaces.MpesaListener;
 import com.bdhobare.mpesa.models.STKPush;
 import com.bdhobare.mpesa.utils.Pair;
-import com.google.android.gms.location.places.Place;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.material.navigation.NavigationView;
 import com.grace.customer.utils.Utils;
 
 public class HomeActivity extends AppCompatActivity
@@ -45,6 +42,8 @@ public class HomeActivity extends AppCompatActivity
 
     MaterialDialog dialog;
 
+    TextView estimate;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,6 +53,8 @@ public class HomeActivity extends AppCompatActivity
         setSupportActionBar(toolbar);
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
         NavigationView navigationView = findViewById(R.id.nav_view);
+        estimate = (TextView)findViewById(R.id.estimate);
+
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.addDrawerListener(toggle);
@@ -76,6 +77,9 @@ public class HomeActivity extends AppCompatActivity
                 askPhoneNumber();
             }
         });
+    }
+    public void updateEstimate(String value){
+        estimate.setText(value);
     }
     private void askPhoneNumber(){
         MaterialDialog dialog = new MaterialDialog.Builder(HomeActivity.this)

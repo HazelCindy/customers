@@ -1,9 +1,10 @@
 package com.grace.customer.utils;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
 import android.view.View;
 import android.widget.TextView;
+
+import androidx.annotation.NonNull;
 
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.GravityEnum;
@@ -35,6 +36,19 @@ public class Utils {
                 .autoDismiss(true)
                 .onPositive(callback)
                 .build();
+        return dialog;
+    }
+    public static MaterialDialog configureProgessDialog(Context context,String title, String message){
+        MaterialDialog dialog=new MaterialDialog.Builder(context)
+                .title(title)
+                .cancelable(false)
+                .titleGravity(GravityEnum.CENTER)
+                .widgetColorRes(R.color.colorPrimary)
+                .customView(R.layout.progress_dialog, true)
+                .build();
+        View view=dialog.getCustomView();
+        TextView messageText=(TextView)view.findViewById(R.id.message);
+        messageText.setText(message);
         return dialog;
     }
 }

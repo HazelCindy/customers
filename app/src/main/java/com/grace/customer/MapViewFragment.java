@@ -7,25 +7,32 @@ import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.content.ContextCompat;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
+import androidx.fragment.app.FragmentManager;
+
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.BounceInterpolator;
 import android.view.animation.Interpolator;
-import android.widget.AdapterView;
-import android.widget.AutoCompleteTextView;
 
+import android.widget.EditText;
+import android.widget.TextView;
+import com.afollestad.materialdialogs.MaterialDialog;
+
+import com.bdhobare.mpesa.network.NetworkHandler;
+import com.bdhobare.mpesa.utils.Pair;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
@@ -38,21 +45,32 @@ import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResult;
 import com.google.android.gms.location.LocationSettingsStates;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
-import com.google.android.gms.location.places.AutocompletePrediction;
-import com.google.android.gms.location.places.Place;
-import com.google.android.gms.location.places.PlaceBuffer;
-import com.google.android.gms.location.places.Places;
+import com.google.android.libraries.places.api.Places;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMap.OnMapClickListener;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.LatLng;;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.grace.customer.utils.PlaceAutocompleteAdapter;
+import com.google.android.libraries.places.api.model.Place;
+import com.google.android.libraries.places.api.net.PlacesClient;
+import com.google.android.libraries.places.widget.Autocomplete;
+import com.google.android.libraries.places.widget.AutocompleteActivity;
+import com.google.android.libraries.places.widget.model.AutocompleteActivityMode;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.grace.customer.utils.Utils;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+
+import static android.app.Activity.RESULT_CANCELED;
+import static android.app.Activity.RESULT_OK;
 
 
 public class MapViewFragment extends Fragment implements
@@ -67,15 +85,19 @@ public class MapViewFragment extends Fragment implements
     private GoogleApiClient googleApiClient;
     private LocationRequest mLocationRequest;
 
-    private Context context;
     private FragmentActivity activity;
 
-    private AutoCompleteTextView pickup;
-    private AutoCompleteTextView destination;
-    private PlaceAutocompleteAdapter mAdapter;
-    private static final LatLngBounds BOUNDS_KENYA = new LatLngBounds(
-            new LatLng(-0.392221, 33.936588), new LatLng(-0.161511, 41.000797));
-    Place searchResult;
+    private EditText pickup;
+    private EditText destination;
+
+    int AUTOCOMPLETE_PICKUP_REQUEST_CODE = 400;
+    int AUTOCOMPLETE_DEST_REQUEST_CODE = 500;
+
+    Place sourcePlace = null;
+    Place destPlace = null;
+
+    MaterialDialog dialog;
+
 
 
     public MapViewFragment() {
@@ -90,8 +112,13 @@ public class MapViewFragment extends Fragment implements
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        context =  getActivity();
         activity =  getActivity();
+
+        // Initialize Places.
+        Places.initialize(getActivity().getApplicationContext(), getResources().getString(R.string.google_maps_key));
+
+        // Create a new Places client instance.
+        PlacesClient placesClient = Places.createClient(getActivity());
 
     }
 
@@ -110,60 +137,43 @@ public class MapViewFragment extends Fragment implements
         SupportMapFragment mapFragment = (SupportMapFragment)fragmentManager.findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
-        pickup = (AutoCompleteTextView)view.findViewById(R.id.pickup);
-        destination = (AutoCompleteTextView)view.findViewById(R.id.destination);
+        pickup = (EditText) view.findViewById(R.id.pickup);
+        destination = (EditText) view.findViewById(R.id.destination);
 
-        pickup.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+
+        pickup.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                final AutocompletePrediction item = mAdapter.getItem(i);
-                final String placeId = item.getPlaceId();
-                PendingResult<PlaceBuffer> placeResult = Places.GeoDataApi
-                        .getPlaceById(googleApiClient, placeId);
+            public void onClick(View view) {
+                // Set the fields to specify which types of place data to
+                // return after the user has made a selection.
+                List<Place.Field> fields = Arrays.asList(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG);
 
-                placeResult.setResultCallback(fromPlaceDetailsCallback);
+                // Start the autocomplete intent.
+                Intent intent = new Autocomplete.IntentBuilder(
+                        AutocompleteActivityMode.FULLSCREEN, fields)
+                        .build(getActivity());
+                startActivityForResult(intent, AUTOCOMPLETE_PICKUP_REQUEST_CODE);
             }
         });
 
-        destination.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        destination.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                final AutocompletePrediction item = mAdapter.getItem(i);
-                final String placeId = item.getPlaceId();
-                PendingResult<PlaceBuffer> placeResult = Places.GeoDataApi
-                        .getPlaceById(googleApiClient, placeId);
+            public void onClick(View view) {
+                // Set the fields to specify which types of place data to
+                // return after the user has made a selection.
+                List<Place.Field> fields = Arrays.asList(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG);
 
-                placeResult.setResultCallback(fromPlaceDetailsCallback);
+                // Start the autocomplete intent.
+                Intent intent = new Autocomplete.IntentBuilder(
+                        AutocompleteActivityMode.FULLSCREEN, fields)
+                        .build(getActivity());
+                startActivityForResult(intent, AUTOCOMPLETE_DEST_REQUEST_CODE);
             }
         });
 
 
         return view;
     }
-
-    /**
-     * Callback for results from a Places Geo Data API query that shows the first place result in
-     * the details view on screen.
-     */
-    private ResultCallback<PlaceBuffer> fromPlaceDetailsCallback
-            = new ResultCallback<PlaceBuffer>() {
-        @Override
-        public void onResult(PlaceBuffer places) {
-            if (!places.getStatus().isSuccess()) {
-                // Request did not complete successfully
-                Log.e("Search", "Place query did not complete. Error: " + places.getStatus().toString());
-                places.release();
-                return;
-            }
-            // Get the Place object from the buffer.
-            Place place =  places.get(0).freeze();
-            searchResult = place;
-
-            showCurrentLocationMarker(searchResult.getLatLng());
-
-            places.release();
-        }
-    };
 
     @Override
     public void onConnected(@Nullable Bundle bundle) {
@@ -244,7 +254,6 @@ public class MapViewFragment extends Fragment implements
         zoomToLocation(new LatLng(location.getLatitude(),location.getLongitude()));
         showCurrentLocationMarker(new LatLng(location.getLatitude(),location.getLongitude()));
 
-
     }
 
     private void zoomToLocation(LatLng location){
@@ -307,12 +316,7 @@ public class MapViewFragment extends Fragment implements
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
                 .addApi(LocationServices.API)
-                .addApi(Places.GEO_DATA_API)
                 .build();
-        mAdapter = new PlaceAutocompleteAdapter(context, googleApiClient, BOUNDS_KENYA,
-                null);
-        pickup.setAdapter(mAdapter);
-        destination.setAdapter(mAdapter);
     }
     private void showCurrentLocationMarker(LatLng location) {
         if (location != null) {
@@ -356,13 +360,92 @@ public class MapViewFragment extends Fragment implements
     }
 
     @Override
-    public void onActivityResult(final int requestCode, final int resultCode, final Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == AUTOCOMPLETE_PICKUP_REQUEST_CODE) {
+            if (resultCode == RESULT_OK) {
+                Place place = Autocomplete.getPlaceFromIntent(data);
+                pickup.setText(place.getName());
+                sourcePlace = place;
+                Log.i("MapViewFragment", "Place: " + place.getName() + ", " + place.getId());
+            } else if (resultCode == AutocompleteActivity.RESULT_ERROR) {
+                // TODO: Handle the error.
+                Status status = Autocomplete.getStatusFromIntent(data);
+                Log.i("MapViewFragment", status.getStatusMessage());
+            } else if (resultCode == RESULT_CANCELED) {
+                // The user canceled the operation.
+            }
+        }else if(requestCode == AUTOCOMPLETE_DEST_REQUEST_CODE){
+            if (resultCode == RESULT_OK) {
+                Place place = Autocomplete.getPlaceFromIntent(data);
+                destination.setText(place.getName());
+                destPlace = place;
+                if (sourcePlace != null)
+                    estimateDistance(sourcePlace, destPlace);
+                Log.i("MapViewFragment", "Place: " + place.getName() + ", " + place.getId());
+            } else if (resultCode == AutocompleteActivity.RESULT_ERROR) {
+                // TODO: Handle the error.
+                Status status = Autocomplete.getStatusFromIntent(data);
+                Log.i("MapViewFragment", status.getStatusMessage());
+            } else if (resultCode == RESULT_CANCELED) {
+                // The user canceled the operation.
+            }
+        }
+    }
+    private void estimateDistance(Place first, Place last){
+        String src = "origins="+first.getLatLng().latitude + "," + first.getLatLng().longitude;
+        String dest = "destinations="+last.getLatLng().latitude + "," + last.getLatLng().longitude;
+        String api_key = "AIzaSyDYm-VSWmddV6RA1j1AXUksiq4kQBWYRsY";
+        String url = "https://maps.googleapis.com/maps/api/distancematrix/json?"+src+"&"+dest+"&key="+api_key;
+        new EstimateDistance().execute(url);
+        Log.d("URL", url);
     }
 
 
     @Override
     public void onInfoWindowClick(Marker marker) {
 
+    }
+    private class EstimateDistance extends AsyncTask<String, Void, Pair<Integer, String>>{
+
+        protected void onPreExecute(){
+            dialog = Utils.configureProgessDialog(getActivity(), "Estimating price", "Please wait as we estimate the price.");
+            dialog.show();
+        }
+        @Override
+        protected Pair<Integer, String> doInBackground(String... strings) {
+            return NetworkHandler.doGet(strings[0], new HashMap<String, String>());
+        }
+        @Override
+        protected void onPostExecute(Pair<Integer, String> result){
+            dialog.dismiss();
+            if(result != null && result.message != null){
+                JsonParser jsonParser = new JsonParser();JsonObject jo = (JsonObject) jsonParser.parse(result.message).getAsJsonObject();
+                if (result.code/100 != 2){
+                    dialog = Utils.configureDialog(getActivity(), "Error", "Error occurred estimating distance", "OK",null);
+                    dialog.show();
+                    return;
+                }else{
+                   String status = jo.get("status").getAsString();
+                   if (status.equals("OK")){
+                       JsonArray rows = jo.get("rows").getAsJsonArray();
+                       if (rows.size() > 0){
+                           JsonObject first = rows.get(0).getAsJsonObject();
+                           JsonArray elements = first.get("elements").getAsJsonArray();
+                           JsonObject firstElements = elements.get(0).getAsJsonObject();
+                           JsonObject distanceObject = firstElements.get("distance").getAsJsonObject();
+                           Double distance = distanceObject.get("value").getAsDouble();
+                           double fare = (distance/1000) * 4.17;
+
+
+                           ((HomeActivity)getActivity()).updateEstimate("Fare Estimate: " + (int)fare);
+
+                       }
+                   }
+                }
+            }else{
+                dialog = Utils.configureDialog(getActivity(), "Connection error", "Check internet","OK", null);
+                dialog.show();
+            }
+        }
     }
 }
