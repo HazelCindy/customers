@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
 import android.view.MenuItem;
@@ -28,6 +29,14 @@ import com.bdhobare.mpesa.interfaces.MpesaListener;
 import com.bdhobare.mpesa.models.STKPush;
 import com.bdhobare.mpesa.utils.Pair;
 import com.google.android.material.navigation.NavigationView;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.ValueEventListener;
 import com.grace.customer.utils.Utils;
 
 public class HomeActivity extends AppCompatActivity
@@ -44,6 +53,12 @@ public class HomeActivity extends AppCompatActivity
 
     TextView estimate;
 
+    private DatabaseReference databaseReference;
+    private FirebaseAuth firebaseAuth;
+
+    String longitude;
+    String latitude;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,17 +70,42 @@ public class HomeActivity extends AppCompatActivity
         NavigationView navigationView = findViewById(R.id.nav_view);
         estimate = (TextView)findViewById(R.id.estimate);
 
+        firebaseAuth = FirebaseAuth.getInstance();
+
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.addDrawerListener(toggle);
         toggle.syncState();
         navigationView.setNavigationItemSelectedListener(this);
 
-        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-        transaction.replace(R.id.mapLayout,MapViewFragment.newInstance());
-        transaction.commit();
+        databaseReference = FirebaseDatabase.getInstance().getReference().child("db").child("vehicle_tracker").child("KCD435J-92");
+        databaseReference.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                latitude = dataSnapshot.child("latitude").getValue().toString();
+                longitude = dataSnapshot.child("longitude").getValue().toString();
+
+                FragmentManager manager = getSupportFragmentManager();
+                FragmentTransaction transaction = manager.beginTransaction();
+                final MapViewFragment mapViewFragment = new MapViewFragment();
+
+                Bundle bundle = new Bundle();
+                bundle.putString("latitude", latitude);
+                bundle.putString("longitude",longitude);
+                mapViewFragment.setArguments(bundle);
+                transaction.add(R.id.mapLayout,mapViewFragment);
+                transaction.commit();
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+
 
         Mpesa.with(HomeActivity.this, CONSUMER_KEY, CONSUMER_SECRET);
+
 
         payButton = (Button) findViewById(R.id.pay);
         payButton.setAlpha(.5f);
@@ -77,7 +117,9 @@ public class HomeActivity extends AppCompatActivity
                 askPhoneNumber();
             }
         });
+
     }
+
     public void updateEstimate(String value){
         estimate.setText(value);
     }
@@ -196,4 +238,6 @@ public class HomeActivity extends AppCompatActivity
         });
         dialog.show();
     }
+
+
 }

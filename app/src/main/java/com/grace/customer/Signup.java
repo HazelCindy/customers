@@ -29,7 +29,7 @@ import static android.widget.Toast.LENGTH_LONG;
 
 public class Signup extends AppCompatActivity {
     Button signup;
-    EditText email,password,confirm_password;
+    EditText email, password, confirm_password;
 
     private FirebaseAuth auth;
     private TextView dataTextview;
@@ -44,7 +44,7 @@ public class Signup extends AppCompatActivity {
         auth = FirebaseAuth.getInstance();
 
         final FirebaseDatabase database = FirebaseDatabase.getInstance();
-        DatabaseReference myRef = database.getReference (  "message");
+        DatabaseReference myRef = database.getReference("message");
 
         root = FirebaseDatabase.getInstance().getReference();
         dataTextview = findViewById(R.id.textview);
@@ -72,7 +72,7 @@ public class Signup extends AppCompatActivity {
         password = (EditText) findViewById(R.id.password);
         confirm_password = (EditText) findViewById(R.id.confirm_password);
 
-        signup = (Button)findViewById(R.id.signup);
+        signup = (Button) findViewById(R.id.signup);
         signup.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -93,6 +93,7 @@ public class Signup extends AppCompatActivity {
             }
         });
     }
+
     public void registerUser(String emailstring, String passwordstring) {
         final Task<AuthResult> authResultTask = auth.createUserWithEmailAndPassword(emailstring, passwordstring).addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
             @Override
@@ -110,11 +111,12 @@ public class Signup extends AppCompatActivity {
                     Log.e("firebase error: ", task.getException().getMessage());
                     Intent intent = new Intent(Signup.this, HomeActivity.class);
                     startActivity(intent);
-                    Toast.makeText(Signup.this, "Registration Failed "+task.getException().toString(),LENGTH_LONG).show();
+                    Toast.makeText(Signup.this, "Registration Failed " + task.getException().toString(), LENGTH_LONG).show();
                     finish();
                 }
 
             }
         });
     }
+
 }

@@ -19,6 +19,7 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -29,6 +30,8 @@ import android.view.animation.Interpolator;
 
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import com.afollestad.materialdialogs.MaterialDialog;
 
 import com.bdhobare.mpesa.network.NetworkHandler;
@@ -45,6 +48,7 @@ import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResult;
 import com.google.android.gms.location.LocationSettingsStates;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.libraries.places.api.Places;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -60,6 +64,12 @@ import com.google.android.libraries.places.api.net.PlacesClient;
 import com.google.android.libraries.places.widget.Autocomplete;
 import com.google.android.libraries.places.widget.AutocompleteActivity;
 import com.google.android.libraries.places.widget.model.AutocompleteActivityMode;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -85,7 +95,11 @@ public class MapViewFragment extends Fragment implements
     private GoogleApiClient googleApiClient;
     private LocationRequest mLocationRequest;
 
+    private String string_latitude;
+    private String string_longitude;
+
     private FragmentActivity activity;
+    private Context context;
 
     private EditText pickup;
     private EditText destination;
@@ -98,7 +112,12 @@ public class MapViewFragment extends Fragment implements
 
     MaterialDialog dialog;
 
+    private DatabaseReference root;
+    private FirebaseAuth firebaseAuth;
+    private DatabaseReference databaseReference;
 
+    private String latitude;
+    private String longitude;
 
     public MapViewFragment() {
         // Required empty public constructor
@@ -113,6 +132,7 @@ public class MapViewFragment extends Fragment implements
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         activity =  getActivity();
+        context= getActivity();
 
         // Initialize Places.
         Places.initialize(getActivity().getApplicationContext(), getResources().getString(R.string.google_maps_key));
@@ -136,6 +156,14 @@ public class MapViewFragment extends Fragment implements
         FragmentManager fragmentManager = getChildFragmentManager();
         SupportMapFragment mapFragment = (SupportMapFragment)fragmentManager.findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
+        string_latitude = getArguments().getString("latitude");
+        string_longitude = getArguments().getString("longitude");
+
+
+        Toast.makeText(context, "Vehicle Latitude is:"+string_latitude, Toast.LENGTH_SHORT).show();
+        Toast.makeText(context, "Vehicle Longitude is:"+string_longitude, Toast.LENGTH_SHORT).show();
+
 
         pickup = (EditText) view.findViewById(R.id.pickup);
         destination = (EditText) view.findViewById(R.id.destination);
@@ -295,6 +323,7 @@ public class MapViewFragment extends Fragment implements
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
         mMap.setContentDescription("Map");
+
         if (ContextCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
             mMap.setMyLocationEnabled(true);
@@ -326,6 +355,17 @@ public class MapViewFragment extends Fragment implements
             markerOptions.position(location);
             mMap.addMarker(markerOptions);
             mMap.setOnMarkerClickListener(this);
+
+            string_latitude = getArguments().getString("latitude");
+            string_longitude = getArguments().getString("longitude");
+
+            double parsed_latitude = Double.parseDouble(string_latitude);
+            double parsed_longitude = Double.parseDouble(string_longitude);
+
+            mMap.addMarker(new MarkerOptions().position(new LatLng(parsed_latitude, parsed_longitude))
+                    .title("Vehicle Location").icon(BitmapDescriptorFactory
+                            .defaultMarker(BitmapDescriptorFactory.HUE_RED)));
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(parsed_latitude, parsed_longitude), 8));
         }
 
     }
@@ -448,4 +488,5 @@ public class MapViewFragment extends Fragment implements
             }
         }
     }
+
 }
