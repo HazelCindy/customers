@@ -13,7 +13,12 @@
         android:layout_height="wrap_content"
         android:text="TextView" />
 
-
+    <ImageView
+        android:layout_width="143dp"
+        android:layout_height="100dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="20dp"
+        android:src="@drawable/images" />
     <androidx.appcompat.widget.AppCompatTextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -29,24 +34,30 @@
         android:id="@+id/email"
         android:inputType="textEmailAddress"
         android:hint="Enter Email"/>
+
     <EditText
+        android:id="@+id/password"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="20dp"
-        android:id="@+id/password"
-        android:hint="Enter Password"/>
+        android:hint="Enter Password"
+        android:inputType="textPassword" />
+
     <Button
-        android:layout_width="match_parent"
-        android:layout_margin="20dp"
-        android:text="SIGN IN"
         android:id="@+id/signin"
-        android:layout_height="wrap_content" />
-    <Button
         android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="20dp"
+        android:background="@drawable/rounded_button"
+        android:text="SIGN IN" />
+
+    <Button
+        android:id="@+id/signup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:layout_marginLeft="20dp"
         android:layout_marginRight="20dp"
-        android:text="SIGN UP"
-        android:id="@+id/signup"
-        android:layout_height="wrap_content" />
+        android:background="@drawable/rounded_button"
+        android:text="SIGN UP" />
 
 </LinearLayout>

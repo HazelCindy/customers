@@ -47,7 +47,7 @@ public class HomeActivity extends AppCompatActivity
     public static final String PASSKEY = "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919";
     public static final String CONSUMER_KEY = "0UaR9N6dARGay8eTKZfVxWHVsUVoLLn5";
     public static final String CONSUMER_SECRET = "TU3L572FHBd89Jbw";
-    public static final String CALLBACK_URL = "https://retailer.bdhobare.com/";
+    public static final String CALLBACK_URL = "http://safiri.bdhobare.com/";
 
     MaterialDialog dialog;
 
@@ -59,7 +59,7 @@ public class HomeActivity extends AppCompatActivity
     String longitude;
     String latitude;
 
-
+    String phoneNumber;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -78,7 +78,7 @@ public class HomeActivity extends AppCompatActivity
         toggle.syncState();
         navigationView.setNavigationItemSelectedListener(this);
 
-        databaseReference = FirebaseDatabase.getInstance().getReference().child("db").child("vehicle_tracker").child("KCD435J-92");
+        databaseReference = FirebaseDatabase.getInstance().getReference().child("db").child("vehicle_tracker").child("KCD435J-");
         databaseReference.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -132,12 +132,48 @@ public class HomeActivity extends AppCompatActivity
                             Toast.makeText(HomeActivity.this, "Invalid phone number", Toast.LENGTH_SHORT).show();
                             return;
                         }
-                        makePayment(input.toString().trim());
+                        phoneNumber = input.toString().trim();
+                        askCarNumber();
                         dialog.dismiss();
+
 
                     }
                 })
                 .title("ENTER MPESA PHONE NUMBER")
+                .titleGravity(GravityEnum.CENTER)
+                .positiveText("CONTINUE")
+                .negativeText("CANCEL")
+                .widgetColorRes(R.color.colorPrimary)
+                .build();
+        dialog.show();
+
+        /*
+        *  .input("Car Number", "", new MaterialDialog.InputCallback() {
+                    @Override
+                    public void onInput(@NonNull MaterialDialog dialog, CharSequence input) {
+                        if (!input.toString().isEmpty()){
+                            makePayment(input.toString().trim());
+                            dialog.dismiss();
+                        }
+
+                    }
+                })
+        * */
+    }
+    private void askCarNumber(){
+        MaterialDialog dialog = new MaterialDialog.Builder(HomeActivity.this)
+                .input("Car Number", "", new MaterialDialog.InputCallback() {
+                    @Override
+                    public void onInput(@NonNull MaterialDialog dialog, CharSequence input) {
+                        if (!input.toString().isEmpty()){
+                            makePayment(input.toString().trim());
+                            dialog.dismiss();
+                        }
+
+
+                    }
+                })
+                .title("ENTER CAR NUMBER PLATE")
                 .titleGravity(GravityEnum.CENTER)
                 .positiveText("PAY")
                 .negativeText("CANCEL")
@@ -145,9 +181,10 @@ public class HomeActivity extends AppCompatActivity
                 .build();
         dialog.show();
     }
-    private void makePayment(String phone){
-        STKPush.Builder builder = new STKPush.Builder(BUSINESS_SHORT_CODE, PASSKEY, 1,BUSINESS_SHORT_CODE, phone);
-        builder.setCallBackURL(CALLBACK_URL + "mpesa");
+
+    private void makePayment(String carNumber){
+        STKPush.Builder builder = new STKPush.Builder(BUSINESS_SHORT_CODE, PASSKEY, 1,BUSINESS_SHORT_CODE, phoneNumber);
+        builder.setCallBackURL(CALLBACK_URL + "mpesa/" + carNumber);
 
         STKPush push = builder.build();
 

@@ -279,8 +279,8 @@ public class MapViewFragment extends Fragment implements
     @Override
     public void onLocationChanged(Location location) {
 
-        zoomToLocation(new LatLng(location.getLatitude(),location.getLongitude()));
-        showCurrentLocationMarker(new LatLng(location.getLatitude(),location.getLongitude()));
+        //zoomToLocation(new LatLng(location.getLatitude(),location.getLongitude()));
+        //showCurrentLocationMarker(new LatLng(location.getLatitude(),location.getLongitude()));
 
     }
 

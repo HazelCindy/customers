@@ -12,7 +12,12 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="TextView" />
-
+    <ImageView
+        android:layout_width="143dp"
+        android:layout_height="100dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="20dp"
+        android:src="@drawable/images" />
 
     <androidx.appcompat.widget.AppCompatTextView
         android:layout_width="wrap_content"
@@ -53,8 +58,10 @@
         android:id="@+id/signup"
         android:layout_width="331dp"
         android:layout_height="wrap_content"
+
         android:layout_marginLeft="20dp"
         android:layout_marginRight="20dp"
+        android:background="@drawable/rounded_button"
         android:text="SIGN UP" />
 
 
